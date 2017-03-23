@@ -317,13 +317,14 @@ def _assert_subprocess_running(proc):
                              " stdout: %s" % (proc.pid, ret, err, out))
 
 
-def start_standing_subprocess(cmd, check_health_delay=0):
+def start_standing_subprocess(cmd, check_health_delay=0, shell=False):
     """Starts a long-running subprocess.
 
     This is not a blocking call and the subprocess started by it should be
     explicitly terminated with stop_standing_subprocess.
 
-    For short-running commands, you should use exe_cmd, which blocks.
+    For short-running commands, you should use subprocess.check_call, which
+    blocks.
 
     You can specify a health check after the subprocess is started to make sure
     it did not stop prematurely.
@@ -333,16 +334,18 @@ def start_standing_subprocess(cmd, check_health_delay=0):
         check_health_delay: float, the number of seconds to wait after the
                             subprocess starts to check its health. Default is 0,
                             which means no check.
+        shell: bool, True to run this command through the system shell,
+            False to invoke it directly. See subprocess.Proc() docs.
 
     Returns:
-        The subprocess that got started.
+        The subprocess that was started.
     """
+    logging.debug('Start standing subprocess with cmd: %s', cmd)
     proc = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        shell=True)
-    logging.debug('Start standing subprocess with cmd: %s', cmd)
+        shell=shell)
     if check_health_delay > 0:
         time.sleep(check_health_delay)
         _assert_subprocess_running(proc)
