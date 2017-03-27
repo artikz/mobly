@@ -107,20 +107,17 @@ class JsonRpcClientBase(object):
     """
 
     def __init__(self,
-                 host_port,
                  device_port,
                  app_name,
                  adb_proxy,
                  log=logging.getLogger()):
         """
         Args:
-            host_port: (int) The host port of this RPC client.
             device_port: (int) The device port of this RPC client.
             app_name: (str) The user-visible name of the app being communicated
                       with.
             adb_proxy: (adb.AdbProxy) The adb proxy to use to start the app.
         """
-        self.host_port = host_port
         self.device_port = device_port
         self.app_name = app_name
         self.uid = None
@@ -193,7 +190,7 @@ class JsonRpcClientBase(object):
         raise AppStartError('%s failed to start on %s.' %
                             (self.app_name, self._adb.serial))
 
-    def connect(self, uid=UNKNOWN_UID, cmd=JsonRpcCommand.INIT):
+    def connect(self, host_port, uid=UNKNOWN_UID, cmd=JsonRpcCommand.INIT):
         """Opens a connection to a JSON RPC server.
 
         Opens a connection to a remote client. The connection attempt will time
@@ -212,7 +209,7 @@ class JsonRpcClientBase(object):
             ProtocolError: Raised when there is an error in the protocol.
         """
         self._counter = self._id_counter()
-        self._conn = socket.create_connection(('127.0.0.1', self.host_port),
+        self._conn = socket.create_connection(('127.0.0.1', host_port),
                                               _SOCKET_CONNECTION_TIMEOUT)
         self._conn.settimeout(_SOCKET_READ_TIMEOUT)
         self._client = self._conn.makefile(mode='brw')

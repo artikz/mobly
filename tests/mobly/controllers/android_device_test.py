@@ -22,6 +22,7 @@ import tempfile
 import unittest
 
 from mobly.controllers import android_device
+from mobly.controllers import android_device_lib
 
 from tests.lib import mock_android_device
 

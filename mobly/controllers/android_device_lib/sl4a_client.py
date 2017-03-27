@@ -32,7 +32,7 @@ class Sl4aClient(jsonrpc_client_base.JsonRpcClientBase):
     See superclass documentation for a list of public attributes.
     """
 
-    def __init__(self, host_port, adb_proxy):
+    def __init__(self, adb_proxy):
         """Initializes an Sl4aClient.
 
         Args:
@@ -40,7 +40,7 @@ class Sl4aClient(jsonrpc_client_base.JsonRpcClientBase):
             adb_proxy: (adb.AdbProxy) The adb proxy to use to start the app.
         """
         super(Sl4aClient, self).__init__(
-            host_port=host_port, device_port=DEVICE_SIDE_PORT, app_name='SL4A',
+            device_port=DEVICE_SIDE_PORT, app_name='SL4A',
             adb_proxy=adb_proxy)
 
     def _do_start_app(self):

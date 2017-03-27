@@ -22,6 +22,9 @@ import mock
 import os
 
 
+_forwarded_tcp_ports = {}
+
+
 def get_mock_ads(num):
     """Generates a list of mock AndroidDevice objects.
 
@@ -56,6 +59,10 @@ def get_instances_with_configs(dicts):
 
 def list_adb_devices():
     return [ad.serial for ad in get_mock_ads(5)]
+
+
+def list_occupied_adb_ports():
+    return _forwarded_tcp_ports.keys()
 
 
 class MockAdbProxy(object):
@@ -105,6 +112,9 @@ class MockAdbProxy(object):
 
         return adb_call
 
+    def tcp_forward(self, host_port, device_port, rebind=True):
+        _forwarded_tcp_ports[host_port] = device_port
+
 
 class MockFastbootProxy(object):
     """Mock class that swaps out calls to adb with mock calls."""
@@ -120,3 +130,19 @@ class MockFastbootProxy(object):
             arg_str = ' '.join(str(elem) for elem in args)
             return arg_str
         return fastboot_call
+
+
+class MockSnippetClient(object):
+
+    def __init__(self, host_port, *args, **kwargs):
+        self.host_port = host_port
+        self.device_port = host_port
+
+    def check_app_installed(self, *args):
+        return True
+
+    def start_app(self):
+        pass
+
+    def connect(self):
+        pass

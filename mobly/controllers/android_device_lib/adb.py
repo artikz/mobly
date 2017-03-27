@@ -37,6 +37,18 @@ class AdbError(Exception):
                 ) % (self.cmd, self.ret_code, self.stdout, self.stderr)
 
 
+def _list_adb_forwarded_ports():
+    out = AdbProxy().forward('--list')
+    clean_lines = str(out, 'utf-8').strip().split('\n')
+    forwarded_ports = []
+    for line in clean_lines:
+        tokens = line.split(' tcp:')
+        if len(tokens) != 3:
+            continue
+        forwarded_ports.append(tokens[0], int(tokens[1]), int(tokens[2]))
+    return forwarded_ports
+
+
 def list_occupied_adb_ports():
     """Lists all the host ports occupied by adb forward.
 
@@ -48,14 +60,13 @@ def list_occupied_adb_ports():
     Returns:
         A list of integers representing occupied host ports.
     """
-    out = AdbProxy().forward('--list')
-    clean_lines = str(out, 'utf-8').strip().split('\n')
-    used_ports = []
-    for line in clean_lines:
-        tokens = line.split(' tcp:')
-        if len(tokens) != 3:
-            continue
-        used_ports.append(int(tokens[1]))
+    used_ports = [port[1] for port in _list_adb_forwarded_ports()]
+    return used_ports
+
+
+def list_adb_ports_forwarded_for_device(serial):
+    used_ports = [
+        port[1] for port in _list_adb_forwarded_ports() if port[0] == serial]
     return used_ports
 
 
@@ -105,14 +116,17 @@ class AdbProxy():
     def _exec_adb_cmd(self, name, arg_str):
         return self._exec_cmd(' '.join((self.adb_str, name, arg_str)))
 
-    def tcp_forward(self, host_port, device_port):
+    def tcp_forward(self, host_port, device_port, rebind=True):
         """Starts tcp forwarding.
 
         Args:
             host_port: Port number to use on the computer.
             device_port: Port number to use on the android device.
         """
-        self.forward('tcp:%d tcp:%d' % (host_port, device_port))
+        cmd = 'tcp:%d tcp:%d' % (host_port, device_port)
+        if not rebind:
+            cmd = "--no-rebind " + cmd
+        self.forward(cmd)
 
     def getprop(self, prop_name):
         """Get a property of the device.

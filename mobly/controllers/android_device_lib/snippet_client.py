@@ -37,22 +37,18 @@ class SnippetClient(jsonrpc_client_base.JsonRpcClientBase):
     See superclass documentation for a list of public attributes.
     """
 
-    def __init__(self, package, host_port, adb_proxy, log=logging.getLogger()):
+    def __init__(self, package, adb_proxy, log=logging.getLogger()):
         """Initializes a SnippetClient.
   
         Args:
             package: (str) The package name of the apk where the snippets are
                      defined.
-            host_port: (int) The port at which to start the snippet client. Note
-                       that the same port will currently be used for both the
-                       device and host side of the connection.
             adb_proxy: (adb.AdbProxy) The adb proxy to use to start the app.
         """
         # TODO(adorokhine): Don't assume that a free host-side port is free on
         # the device as well. Both sides should allocate a unique port.
         super(SnippetClient, self).__init__(
-            host_port=host_port,
-            device_port=host_port,
+            device_port=0,
             app_name=package,
             adb_proxy=adb_proxy,
             log=log)

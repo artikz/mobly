@@ -620,15 +620,20 @@ class AndroidDevice(object):
                     self,
                     'Snippet package "%s" has already been loaded under name'
                     ' "%s".' % (package, client_name))
-        host_port = utils.get_available_host_port()
         client = snippet_client.SnippetClient(
             package=package,
-            host_port=host_port,
             adb_proxy=self.adb,
             log=self.log)
         self._start_jsonrpc_client(client)
         self._snippet_clients[name] = client
         setattr(self, name, client)
+
+    def _allocate_host_port(self, client):
+        while True:
+            host_port = utils.get_available_host_port()
+            self.adb.tcp_forward(host_port, client.device_port if client.device_port else host_port, rebind=False)
+            if host_port in self.adb.list_adb_ports_forwarded_for_device(self.serial):
+                return host_port
 
     def load_sl4a(self):
         """Start sl4a service on the Android device.
@@ -639,9 +644,7 @@ class AndroidDevice(object):
         Creates an sl4a client (self.sl4a) with one connection, and one
         EventDispatcher obj (self.ed) with the other connection.
         """
-        host_port = utils.get_available_host_port()
-        self.sl4a = sl4a_client.Sl4aClient(
-            host_port=host_port, adb_proxy=self.adb)
+        self.sl4a = sl4a_client.Sl4aClient(adb_proxy=self.adb)
         self._start_jsonrpc_client(self.sl4a)
 
         # Start an EventDispatcher for the current sl4a session
@@ -658,7 +661,9 @@ class AndroidDevice(object):
         If the connection cannot be made, tries to restart it.
         """
         client.check_app_installed()
-        self.adb.tcp_forward(client.host_port, client.device_port)
+        client.host_port = self._allocate_host_port(client)
+        if not client.device_port:
+            client.device_port = client.host_port
         try:
             client.connect()
         except:
